@@ -26,6 +26,7 @@ class AuthMiddleware(BaseMiddleware):
 
         user_id = message.from_user.id
         username = message.from_user.username
+        full_name = message.from_user.full_name
 
         # التحقق مما إذا كان المستخدم موثقاً بالفعل
         authorized = await is_user_authorized(user_id)
@@ -37,7 +38,7 @@ class AuthMiddleware(BaseMiddleware):
         # إذا أدخل المستخدم كلمة المرور الصحيحة
         if text == PASSWORD:
             # تسجيل المستخدم وتوثيقه
-            await create_or_update_user(telegram_id=user_id, username=username)
+            await create_or_update_user(telegram_id=user_id, username=username, full_name=full_name)
             await set_user_authorized(user_id, 1)
 
             # استيراد رسالة الترحيب من معالج البداية
@@ -57,7 +58,7 @@ class AuthMiddleware(BaseMiddleware):
 
         # إذا حاول المستخدم استخدام الأمر /start
         if text.startswith("/start"):
-            await create_or_update_user(telegram_id=user_id, username=username)
+            await create_or_update_user(telegram_id=user_id, username=username, full_name=full_name)
             await message.answer(
                 "🔐 يرجى إدخال كلمة المرور للوصول إلى البوت:",
                 parse_mode="HTML"
@@ -65,7 +66,7 @@ class AuthMiddleware(BaseMiddleware):
             raise CancelHandler()
 
         # إذا أرسل المستخدم أي شيء آخر وهو غير موثق
-        await create_or_update_user(telegram_id=user_id, username=username)
+        await create_or_update_user(telegram_id=user_id, username=username, full_name=full_name)
         await message.answer(
             "❌ كلمة المرور غير صحيحة.\nيرجى المحاولة مرة أخرى:",
             parse_mode="HTML"

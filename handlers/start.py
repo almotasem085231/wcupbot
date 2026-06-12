@@ -44,7 +44,8 @@ async def cmd_start(message: Message):
     # تسجيل أو تحديث المستخدم في قاعدة البيانات
     await create_or_update_user(
         telegram_id=user.id,
-        username=user.username
+        username=user.username,
+        full_name=user.full_name
     )
 
     await message.answer(

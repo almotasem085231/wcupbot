@@ -22,6 +22,7 @@ async def init_db():
             CREATE TABLE IF NOT EXISTS users (
                 telegram_id INTEGER PRIMARY KEY,
                 username TEXT,
+                full_name TEXT,
                 timezone TEXT DEFAULT 'Asia/Riyadh',
                 join_date TEXT,
                 is_authorized INTEGER DEFAULT 0
@@ -61,6 +62,13 @@ async def init_db():
             await db.commit()
         except Exception:
             pass
+
+        # إضافة عمود full_name لجدول users إذا لم يكن موجوداً
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN full_name TEXT;")
+            await db.commit()
+        except Exception:
+            pass
             
         logger.info("✅ تم تهيئة قاعدة البيانات بنجاح")
 
@@ -87,7 +95,8 @@ async def get_all_users() -> List[Dict[str, Any]]:
 
 async def create_or_update_user(
     telegram_id: int,
-    username: str = None
+    username: str = None,
+    full_name: str = None
 ) -> bool:
     """إنشاء مستخدم جديد أو تحديث بياناته."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -95,13 +104,13 @@ async def create_or_update_user(
         user = await get_user(telegram_id)
         if user:
             await db.execute(
-                "UPDATE users SET username = ? WHERE telegram_id = ?",
-                (username, telegram_id)
+                "UPDATE users SET username = ?, full_name = ? WHERE telegram_id = ?",
+                (username, full_name, telegram_id)
             )
         else:
             await db.execute(
-                "INSERT INTO users (telegram_id, username, timezone, join_date) VALUES (?, ?, 'Asia/Riyadh', ?)",
-                (telegram_id, username, now)
+                "INSERT INTO users (telegram_id, username, full_name, timezone, join_date) VALUES (?, ?, ?, 'Asia/Riyadh', ?)",
+                (telegram_id, username, full_name, now)
             )
         await db.commit()
         return True
@@ -268,7 +277,7 @@ async def get_leaderboard_db() -> List[Dict[str, Any]]:
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute(
-            "SELECT telegram_id, username, raaw_points FROM users ORDER BY raaw_points DESC, username ASC LIMIT 10"
+            "SELECT telegram_id, username, full_name, raaw_points FROM users ORDER BY raaw_points DESC, username ASC LIMIT 10"
         ) as cursor:
             rows = await cursor.fetchall()
             return [dict(row) for row in rows]

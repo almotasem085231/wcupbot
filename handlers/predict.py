@@ -237,8 +237,8 @@ async def cmd_leaderboard(message: Message):
     
     for idx, user in enumerate(top_users):
         rank = medals[idx] if idx < 3 else f"{idx + 1}."
-        username = f"@{user['username']}" if user['username'] else f"مستخدم {user['telegram_id']}"
-        text += f"{rank} {username} ── <b>{user['raaw_points']} نقطة</b>\n"
+        name = user['full_name'] if user['full_name'] else (f"@{user['username']}" if user['username'] else f"مستخدم {user['telegram_id']}")
+        text += f"{rank} {name} ── <b>{user['raaw_points']} نقطة</b>\n"
         
     await message.answer(text, parse_mode="HTML")
 
