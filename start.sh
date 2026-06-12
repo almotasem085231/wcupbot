@@ -26,6 +26,7 @@ pip install --upgrade pip
 
 # تثبيت المتطلبات من ملف requirements.txt
 echo "📚 4. تثبيت مكتبات Python المطلوبة..."
+export AIOHTTP_NO_EXTENSIONS=1
 pip install -r requirements.txt
 
 # إنشاء مجلدات البيانات الأساسية
