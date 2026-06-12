@@ -23,7 +23,8 @@ async def init_db():
                 telegram_id INTEGER PRIMARY KEY,
                 username TEXT,
                 timezone TEXT DEFAULT 'Asia/Riyadh',
-                join_date TEXT
+                join_date TEXT,
+                is_authorized INTEGER DEFAULT 0
             );
         """)
         await db.execute("""
@@ -50,6 +51,13 @@ async def init_db():
         # إضافة عمود raaw_points لجدول users إذا لم يكن موجوداً
         try:
             await db.execute("ALTER TABLE users ADD COLUMN raaw_points INTEGER DEFAULT 0;")
+            await db.commit()
+        except Exception:
+            pass
+
+        # إضافة عمود is_authorized لجدول users إذا لم يكن موجوداً
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN is_authorized INTEGER DEFAULT 0;")
             await db.commit()
         except Exception:
             pass
@@ -264,4 +272,21 @@ async def get_leaderboard_db() -> List[Dict[str, Any]]:
         ) as cursor:
             rows = await cursor.fetchall()
             return [dict(row) for row in rows]
+
+
+async def is_user_authorized(telegram_id: int) -> bool:
+    """التحقق مما إذا كان المستخدم موثقاً."""
+    user = await get_user(telegram_id)
+    return (user is not None) and (user.get("is_authorized", 0) == 1)
+
+
+async def set_user_authorized(telegram_id: int, is_authorized: int = 1) -> bool:
+    """تحديث حالة توثيق المستخدم."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE users SET is_authorized = ? WHERE telegram_id = ?",
+            (is_authorized, telegram_id)
+        )
+        await db.commit()
+        return True
 

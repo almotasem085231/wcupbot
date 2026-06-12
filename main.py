@@ -56,6 +56,10 @@ bot = Bot(token=config.BOT_TOKEN, parse_mode="HTML")
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
+# تسجيل وسيط التحقق من الهوية والتوثيق
+from middlewares import AuthMiddleware
+dp.middleware.setup(AuthMiddleware())
+
 # إعداد مجدول المهام الخلفية لإرسال الإشعارات
 scheduler = AsyncIOScheduler()
 scheduler.add_job(
