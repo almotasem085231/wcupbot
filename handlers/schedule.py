@@ -10,7 +10,7 @@ from math import ceil
 from aiogram import Dispatcher
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from config import MATCHES_JSON_PATH
-from database import get_user_timezone, convert_match_time
+from database import get_user_timezone, convert_match_time, get_match_status
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,10 @@ def format_match_card(match: dict, formatted_date: str, formatted_time: str) -> 
     city = match.get("city", "مدينة غير محددة")
     stage = match.get("stage", "")
 
+    status = get_match_status(match.get("date", ""), match.get("time", ""))
+
     card = (
+        f"📌 <b>الحالة:</b> {status}\n"
         f"{home_flag} {home_team} × {away_flag} {away_team}\n"
         f"📅 {formatted_date}\n"
         f"🕒 {formatted_time}\n"

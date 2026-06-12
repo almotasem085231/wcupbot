@@ -146,3 +146,27 @@ def convert_match_time(date_str: str, time_str: str, user_tz_str: str) -> Tuple[
     except Exception as e:
         logger.error(f"Error converting timezone: {e}")
         return date_str, time_str, datetime.now()
+
+
+def get_match_status(date_str: str, time_str: str) -> str:
+    """
+    تحديد حالة المباراة بناءً على الوقت الحالي بالـ UTC.
+    المخرجات:
+    - "⏳ لم تبدأ"
+    - "🟢 جارية الآن"
+    - "🏁 انتهت"
+    """
+    try:
+        match_dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M").replace(tzinfo=pytz.UTC)
+        now_utc = datetime.now(pytz.UTC)
+        diff = (now_utc - match_dt).total_seconds()
+        
+        if diff < 0:
+            return "⏳ لم تبدأ"
+        elif 0 <= diff <= 7200:  # ساعتان (120 دقيقة)
+            return "🟢 جارية الآن"
+        else:
+            return "🏁 انتهت"
+    except Exception:
+        return "⏳ لم تبدأ"
+
