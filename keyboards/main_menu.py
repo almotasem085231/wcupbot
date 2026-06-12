@@ -7,7 +7,10 @@ keyboards/main_menu.py - لوحة المفاتيح الرئيسية
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
-def get_main_menu() -> InlineKeyboardMarkup:
+import config
+
+
+def get_main_menu(user_id: int = None) -> InlineKeyboardMarkup:
     """القائمة الرئيسية للبوت."""
     markup = InlineKeyboardMarkup(row_width=2)
     
@@ -30,7 +33,14 @@ def get_main_menu() -> InlineKeyboardMarkup:
         InlineKeyboardButton(text="ℹ️ المساعدة", callback_data="help")
     )
 
+    # إذا كان المستخدم هو المشرف، نعرض له زر لوحة التحكم
+    if user_id is not None and user_id == config.ADMIN_ID:
+        markup.row(
+            InlineKeyboardButton(text="🛠 لوحة المشرف", callback_data="admin_panel")
+        )
+
     return markup
+
 
 
 def get_back_to_menu() -> InlineKeyboardMarkup:

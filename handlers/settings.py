@@ -81,7 +81,7 @@ async def callback_set_timezone(callback: CallbackQuery):
         f"🌍 البلد المحدد: <b>{country_name}</b>\n"
         f"🕒 التوقيت المعتمد: <b>{tz_value}</b>\n\n"
         f"ستظهر جميع مواعيد المباريات الآن متطابقة مع توقيت هذا البلد.",
-        reply_markup=get_main_menu(),
+        reply_markup=get_main_menu(callback.from_user.id),
         parse_mode="HTML"
     )
     await callback.answer(f"✅ تم حفظ التوقيت: {country_name}")

@@ -299,3 +299,44 @@ async def set_user_authorized(telegram_id: int, is_authorized: int = 1) -> bool:
         await db.commit()
         return True
 
+
+async def get_user_by_identifier(identifier: str) -> Optional[Dict[str, Any]]:
+    """البحث عن مستخدم بواسطة المعرف (Telegram ID أو اسم المستخدم)."""
+    identifier = identifier.strip()
+    if identifier.startswith("@"):
+        identifier = identifier[1:]
+    
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        
+        # إذا كان المعرف عبارة عن رقم، نبحث أولاً بالـ telegram_id
+        if identifier.isdigit():
+            async with db.execute("SELECT * FROM users WHERE telegram_id = ?", (int(identifier),)) as cursor:
+                row = await cursor.fetchone()
+                if row:
+                    return dict(row)
+                    
+        # ثم نبحث باسم المستخدم (تطابق غير حساس لحالة الأحرف)
+        async with db.execute("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", (identifier,)) as cursor:
+            row = await cursor.fetchone()
+            if row:
+                return dict(row)
+                
+        return None
+
+
+async def add_user_points(telegram_id: int, points: int) -> int:
+    """إضافة/خصم نقاط RAAW لمستخدم وتحديث رصيده."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE users SET raaw_points = raaw_points + ? WHERE telegram_id = ?",
+            (points, telegram_id)
+        )
+        await db.commit()
+        
+        # جلب الرصيد الجديد
+        async with db.execute("SELECT raaw_points FROM users WHERE telegram_id = ?", (telegram_id,)) as cursor:
+            row = await cursor.fetchone()
+            return row[0] if row else 0
+
+

@@ -50,7 +50,7 @@ class AuthMiddleware(BaseMiddleware):
             )
             await message.answer(
                 WELCOME_MESSAGE,
-                reply_markup=get_main_menu(),
+                reply_markup=get_main_menu(user_id),
                 parse_mode="HTML"
             )
             # إلغاء مرور الرسالة للمعالجات الأخرى

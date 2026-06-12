@@ -50,7 +50,7 @@ async def cmd_start(message: Message):
 
     await message.answer(
         WELCOME_MESSAGE,
-        reply_markup=get_main_menu(),
+        reply_markup=get_main_menu(user.id),
         parse_mode="HTML"
     )
 
@@ -68,7 +68,7 @@ async def callback_main_menu(callback: CallbackQuery):
     """العودة للقائمة الرئيسية."""
     await callback.message.edit_text(
         WELCOME_MESSAGE,
-        reply_markup=get_main_menu(),
+        reply_markup=get_main_menu(callback.from_user.id),
         parse_mode="HTML"
     )
     await callback.answer()
