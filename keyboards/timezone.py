@@ -1,21 +1,20 @@
 """
 keyboards/timezone.py - لوحة اختيار المنطقة الزمنية
 ==============================================
-أزرار اختيار المنطقة الزمنية للبلدان العربية السبعة المحددة.
+أزرار اختيار المنطقة الزمنية للبلدان العربية المحددة (متوافق مع aiogram v2).
 """
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder
 from config import ARABIC_TIMEZONES
 
 
 def get_timezone_keyboard() -> InlineKeyboardMarkup:
     """لوحة اختيار المنطقة الزمنية."""
-    builder = InlineKeyboardBuilder()
+    markup = InlineKeyboardMarkup(row_width=1)
 
-    # أزرار الدول العربية السبعة
+    # إضافة أزرار الدول العربية
     for display_name, tz_value in ARABIC_TIMEZONES.items():
-        builder.row(
+        markup.add(
             InlineKeyboardButton(
                 text=display_name,
                 callback_data=f"set_tz:{tz_value}"
@@ -23,7 +22,7 @@ def get_timezone_keyboard() -> InlineKeyboardMarkup:
         )
 
     # زر العودة للقائمة الرئيسية
-    builder.row(
+    markup.add(
         InlineKeyboardButton(text="🏠 الرئيسية", callback_data="main_menu")
     )
-    return builder.as_markup()
+    return markup

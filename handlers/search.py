@@ -1,26 +1,24 @@
 """
 handlers/search.py - معالج البحث عن منتخب
 ==============================================
-يتيح للمستخدم البحث عن مباريات منتخب معين عبر إدخال اسمه.
+يتيح للمستخدم البحث عن مباريات منتخب معين عبر إدخال اسمه (متوافق مع aiogram v2).
 """
 
 import json
 import logging
-from aiogram import Router, F
+from aiogram import Dispatcher
 from aiogram.types import Message, CallbackQuery
-from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import State, StatesGroup
 from config import MATCHES_JSON_PATH
 from database import get_user_timezone, convert_match_time
 from keyboards.main_menu import get_back_to_menu
 
 logger = logging.getLogger(__name__)
-router = Router()
 
 
 class SearchStates(StatesGroup):
-    """حالات FSM للبحث عن منتخب."""
+    """حالات FSM للبحث عن منتخب (متوافق مع aiogram v2)."""
     waiting_for_team_name = State()
 
 
@@ -41,7 +39,7 @@ def format_match_card(match: dict, formatted_date: str, formatted_time: str) -> 
     away_flag = match.get("away_flag", "🏳️")
     away_team = match.get("away_team", "غير معروف")
     stadium = match.get("stadium", "ملعب غير محدد")
-    city = match.get("city", "مدينة غير حددة")
+    city = match.get("city", "مدينة غير محددة")
     stage = match.get("stage", "")
 
     card = (
@@ -57,19 +55,17 @@ def format_match_card(match: dict, formatted_date: str, formatted_time: str) -> 
     return card
 
 
-@router.message(Command("team"))
-async def cmd_team(message: Message, state: FSMContext):
+async def cmd_team(message: Message):
     """معالج أمر /team للبحث عن منتخب."""
     await message.answer(
         "🔍 <b>البحث عن منتخب</b>\n\n"
         "أرسل اسم المنتخب الذي تريد البحث عن مبارياته (مثال: الأرجنتين، فرنسا، المغرب، البرازيل):",
         parse_mode="HTML"
     )
-    await state.set_state(SearchStates.waiting_for_team_name)
+    await SearchStates.waiting_for_team_name.set()
 
 
-@router.callback_query(F.data == "search_team")
-async def callback_search(callback: CallbackQuery, state: FSMContext):
+async def callback_search(callback: CallbackQuery):
     """معالج زر البحث عن منتخب من القائمة."""
     await callback.message.edit_text(
         "🔍 <b>البحث عن منتخب</b>\n\n"
@@ -77,11 +73,10 @@ async def callback_search(callback: CallbackQuery, state: FSMContext):
         reply_markup=get_back_to_menu(),
         parse_mode="HTML"
     )
-    await state.set_state(SearchStates.waiting_for_team_name)
+    await SearchStates.waiting_for_team_name.set()
     await callback.answer()
 
 
-@router.message(SearchStates.waiting_for_team_name)
 async def process_team_name(message: Message, state: FSMContext):
     """معالجة الاسم المرسل والبحث في ملف JSON."""
     team_query = message.text.strip()
@@ -111,7 +106,7 @@ async def process_team_name(message: Message, state: FSMContext):
             reply_markup=get_back_to_menu(),
             parse_mode="HTML"
         )
-        await state.clear()
+        await state.finish()
         return
 
     # ترتيب النتائج زمنياً
@@ -134,4 +129,12 @@ async def process_team_name(message: Message, state: FSMContext):
         reply_markup=get_back_to_menu(),
         parse_mode="HTML"
     )
-    await state.clear()
+    await state.finish()
+
+
+def register_search_handlers(dp: Dispatcher):
+    """تسجيل معالجات البحث و FSM في موزع المهام."""
+    dp.register_message_handler(cmd_team, commands=["team"])
+    dp.register_callback_query_handler(callback_search, text="search_team")
+    # تسجيل معالج مع وجود حالة FSM المحددة
+    dp.register_message_handler(process_team_name, state=SearchStates.waiting_for_team_name)

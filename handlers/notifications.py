@@ -9,7 +9,7 @@ import logging
 import pytz
 from datetime import datetime
 from aiogram import Bot
-from aiogram.exceptions import TelegramAPIError
+from aiogram.utils.exceptions import TelegramAPIError
 from config import MATCHES_JSON_PATH
 from database import (
     get_all_users, 

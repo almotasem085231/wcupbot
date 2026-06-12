@@ -1,4 +1,4 @@
-aiogram>=3.7.0,<3.8.0
+aiogram>=2.25.1,<2.26
 python-dotenv==1.0.1
 pytz==2024.1
 aiosqlite==0.20.0

@@ -1,18 +1,16 @@
 """
 handlers/start.py - معالج أمر /start والمساعدة
 ==============================================
-يعرض القائمة الرئيسية ويسجل المستخدمين الجدد.
+يعرض القائمة الرئيسية ويسجل المستخدمين الجدد (متوافق مع aiogram v2).
 """
 
 import logging
-from aiogram import Router, F
+from aiogram import Dispatcher
 from aiogram.types import Message, CallbackQuery
-from aiogram.filters import CommandStart, Command
 from database import create_or_update_user
 from keyboards.main_menu import get_main_menu, get_back_to_menu
 
 logger = logging.getLogger(__name__)
-router = Router()
 
 WELCOME_MESSAGE = """
 🏆 <b>مرحباً بك في بوت جدول كأس العالم 2026</b> 🏆
@@ -38,7 +36,6 @@ HELP_MESSAGE = """
 """
 
 
-@router.message(CommandStart())
 async def cmd_start(message: Message):
     """معالج أمر /start."""
     user = message.from_user
@@ -57,7 +54,6 @@ async def cmd_start(message: Message):
     )
 
 
-@router.message(Command("help"))
 async def cmd_help(message: Message):
     """معالج أمر /help."""
     await message.answer(
@@ -67,7 +63,6 @@ async def cmd_help(message: Message):
     )
 
 
-@router.callback_query(F.data == "main_menu")
 async def callback_main_menu(callback: CallbackQuery):
     """العودة للقائمة الرئيسية."""
     await callback.message.edit_text(
@@ -78,7 +73,6 @@ async def callback_main_menu(callback: CallbackQuery):
     await callback.answer()
 
 
-@router.callback_query(F.data == "help")
 async def callback_help(callback: CallbackQuery):
     """عرض المساعدة عبر الأزرار."""
     await callback.message.edit_text(
@@ -87,3 +81,11 @@ async def callback_help(callback: CallbackQuery):
         parse_mode="HTML"
     )
     await callback.answer()
+
+
+def register_start_handlers(dp: Dispatcher):
+    """تسجيل معالجات start في موزع المهام."""
+    dp.register_message_handler(cmd_start, commands=["start"])
+    dp.register_message_handler(cmd_help, commands=["help"])
+    dp.register_callback_query_handler(callback_main_menu, text="main_menu")
+    dp.register_callback_query_handler(callback_help, text="help")

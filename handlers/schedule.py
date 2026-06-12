@@ -1,21 +1,18 @@
 """
 handlers/schedule.py - معالج جدول البطولة كاملاً
 ==============================================
-يعرض جدول مباريات كأس العالم 2026 كاملاً مع إمكانية التصفح بصفحات متتالية.
+يعرض جدول مباريات كأس العالم 2026 كاملاً مع إمكانية التصفح بصفحات متتالية (متوافق مع aiogram v2).
 """
 
 import json
 import logging
 from math import ceil
-from aiogram import Router, F
+from aiogram import Dispatcher
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.filters import Command
 from config import MATCHES_JSON_PATH
 from database import get_user_timezone, convert_match_time
 
 logger = logging.getLogger(__name__)
-router = Router()
 
 PAGE_SIZE = 4  # عدد المباريات في الصفحة الواحدة
 
@@ -58,7 +55,7 @@ def format_match_card(match: dict, formatted_date: str, formatted_time: str) -> 
 
 def get_schedule_keyboard(page_index: int, total_pages: int) -> InlineKeyboardMarkup:
     """إنشاء أزرار التصفح لجدول البطولة."""
-    builder = InlineKeyboardBuilder()
+    markup = InlineKeyboardMarkup()
     
     nav_row = []
     # زر السابق
@@ -70,10 +67,10 @@ def get_schedule_keyboard(page_index: int, total_pages: int) -> InlineKeyboardMa
         nav_row.append(InlineKeyboardButton(text="➡ التالي", callback_data=f"all_matches_page:{page_index + 1}"))
         
     if nav_row:
-        builder.row(*nav_row)
+        markup.row(*nav_row)
         
-    builder.row(InlineKeyboardButton(text="🏠 الرئيسية", callback_data="main_menu"))
-    return builder.as_markup()
+    markup.add(InlineKeyboardButton(text="🏠 الرئيسية", callback_data="main_menu"))
+    return markup
 
 
 async def get_schedule_page_message(user_id: int, page_index: int) -> tuple[str, InlineKeyboardMarkup]:
@@ -115,7 +112,6 @@ async def get_schedule_page_message(user_id: int, page_index: int) -> tuple[str,
     return text, markup
 
 
-@router.message(Command("schedule"))
 async def cmd_schedule(message: Message):
     """معالج أمر /schedule."""
     text, markup = await get_schedule_page_message(message.from_user.id, 0)
@@ -126,7 +122,6 @@ async def cmd_schedule(message: Message):
     )
 
 
-@router.callback_query(F.data.startswith("all_matches_page:"))
 async def callback_schedule_page(callback: CallbackQuery):
     """معالج التصفح بين صفحات جدول البطولة."""
     page_index = int(callback.data.split(":")[1])
@@ -143,3 +138,9 @@ async def callback_schedule_page(callback: CallbackQuery):
         logger.debug(f"Edit message ignore: {e}")
         
     await callback.answer()
+
+
+def register_schedule_handlers(dp: Dispatcher):
+    """تسجيل معالجات الجدول في موزع المهام."""
+    dp.register_message_handler(cmd_schedule, commands=["schedule"])
+    dp.register_callback_query_handler(callback_schedule_page, text_startswith="all_matches_page:")

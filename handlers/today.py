@@ -1,22 +1,20 @@
 """
 handlers/today.py - معالج مباريات اليوم
 ==============================================
-يعرض مباريات اليوم بناءً على المنطقة الزمنية المحددة للمستخدم.
+يعرض مباريات اليوم بناءً على المنطقة الزمنية المحددة للمستخدم (متوافق مع aiogram v2).
 """
 
 import json
 import logging
 import pytz
 from datetime import datetime
-from aiogram import Router, F
+from aiogram import Dispatcher
 from aiogram.types import Message, CallbackQuery
-from aiogram.filters import Command
 from config import MATCHES_JSON_PATH
 from database import get_user_timezone, convert_match_time
 from keyboards.main_menu import get_back_to_menu
 
 logger = logging.getLogger(__name__)
-router = Router()
 
 
 def load_matches() -> list:
@@ -94,7 +92,6 @@ async def get_today_matches_message(user_id: int) -> str:
     return message_text
 
 
-@router.message(Command("today"))
 async def cmd_today(message: Message):
     """معالج أمر /today."""
     text = await get_today_matches_message(message.from_user.id)
@@ -105,7 +102,6 @@ async def cmd_today(message: Message):
     )
 
 
-@router.callback_query(F.data == "today_matches")
 async def callback_today(callback: CallbackQuery):
     """معالج زر مباريات اليوم من القائمة."""
     text = await get_today_matches_message(callback.from_user.id)
@@ -115,3 +111,9 @@ async def callback_today(callback: CallbackQuery):
         parse_mode="HTML"
     )
     await callback.answer()
+
+
+def register_today_handlers(dp: Dispatcher):
+    """تسجيل معالجات اليوم في موزع المهام."""
+    dp.register_message_handler(cmd_today, commands=["today"])
+    dp.register_callback_query_handler(callback_today, text="today_matches")
