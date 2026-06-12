@@ -14,7 +14,7 @@ import config
 from database import init_db
 
 # استيراد معالجات الموديولات ونظام الإشعارات
-from handlers import start, today, schedule, search, settings
+from handlers import start, today, schedule, search, settings, predict
 from handlers.notifications import check_and_send_notifications
 
 logger = logging.getLogger(__name__)
@@ -79,6 +79,7 @@ async def on_startup(dispatcher: Dispatcher):
     schedule.register_schedule_handlers(dispatcher)
     search.register_search_handlers(dispatcher)
     settings.register_settings_handlers(dispatcher)
+    predict.register_predict_handlers(dispatcher)
     
     logger.info("✅ تم تسجيل كافة المعالجات بنجاح")
 

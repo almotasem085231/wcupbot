@@ -137,3 +137,88 @@ async def check_and_send_notifications(bot: Bot):
             
             # تسجيل التنبيه كمرسل لتفادي تكراره
             await mark_notification_sent(user_id, match_id, notif_type)
+
+    # تشغيل التحقق من التوقعات تلقائياً
+    try:
+        await resolve_predictions(bot)
+    except Exception as e:
+        logger.error(f"Error resolving predictions in scheduler: {e}")
+
+
+async def resolve_predictions(bot: Bot):
+    """التحقق من نتائج المباريات وحساب نقاط توقعات المستخدمين."""
+    from database import get_unresolved_predictions, resolve_prediction_db
+    
+    matches = load_matches()
+    if not matches:
+        return
+
+    unresolved = await get_unresolved_predictions()
+    if not unresolved:
+        return
+
+    matches_map = {m["id"]: m for m in matches}
+
+    for pred in unresolved:
+        match_id = pred["match_id"]
+        user_id = pred["user_id"]
+        pred_winner = pred["predicted_winner"]
+        pred_score = pred["predicted_score"]
+
+        match = matches_map.get(match_id)
+        if not match:
+            continue
+
+        home_score = match.get("home_score")
+        away_score = match.get("away_score")
+
+        # إذا كانت النتيجة متوفرة (ليست null وليست None)
+        if home_score is not None and away_score is not None:
+            if home_score > away_score:
+                actual_winner = "home"
+            elif away_score > home_score:
+                actual_winner = "away"
+            else:
+                actual_winner = "draw"
+
+            points = 0
+            try:
+                pred_home, pred_away = map(int, pred_score.split("-"))
+                if pred_home == home_score and pred_away == away_score:
+                    points = 10
+                elif pred_winner == actual_winner:
+                    points = 5
+            except Exception:
+                if pred_winner == actual_winner:
+                    points = 5
+
+            await resolve_prediction_db(pred["id"], user_id, points)
+
+            home_team = match.get("home_team", "غير معروف")
+            away_team = match.get("away_team", "غير معروف")
+            home_flag = match.get("home_flag", "🏳️")
+            away_flag = match.get("away_flag", "🏳️")
+
+            if points == 10:
+                result_text = f"🔥 <b>توقع خارق! نتيجة صحيحة تماماً!</b>\n\nحصلت على: <b>+10 RAAW Points</b> 🏆"
+            elif points == 5:
+                result_text = f"✅ <b>توقع صحيح للفائز باللقاء!</b>\n\nحصلت على: <b>+5 RAAW Points</b> ⭐️"
+            else:
+                result_text = f"❌ <b>توقع غير صحيح للمباراة.</b>\n\nحصلت على: <b>0 نقاط RAAW</b>"
+
+            message_text = (
+                f"🔔 <b>تم احتساب توقعك للمباراة!</b>\n\n"
+                f"{home_flag} {home_team} <b>{home_score} - {away_score}</b> {away_team} {away_flag}\n"
+                f"🎯 توقعك: <b>{pred_score}</b>\n\n"
+                f"{result_text}"
+            )
+
+            try:
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=message_text,
+                    parse_mode="HTML"
+                )
+                logger.info(f"📨 تم إرسال نتيجة التوقع للمستخدم {user_id} للمباراة {match_id}")
+            except TelegramAPIError as e:
+                logger.warning(f"⚠️ فشل إرسال نتيجة التوقع للمستخدم {user_id}: {e}")

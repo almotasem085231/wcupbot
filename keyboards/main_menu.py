@@ -20,6 +20,10 @@ def get_main_menu() -> InlineKeyboardMarkup:
         InlineKeyboardButton(text="🔍 البحث عن منتخب", callback_data="search_team"),
         InlineKeyboardButton(text="🌍 تغيير التوقيت", callback_data="change_timezone")
     )
+    markup.row(
+        InlineKeyboardButton(text="🎯 توقع المباريات", callback_data="pred_start"),
+        InlineKeyboardButton(text="📊 المتصدرين", callback_data="pred_leaderboard")
+    )
     
     # زر المساعدة المنفرد
     markup.row(
